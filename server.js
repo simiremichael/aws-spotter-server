@@ -23,7 +23,7 @@ app.use(cookieParser())
 
  app.use(cors({
   credentials: true,
-  origin: ['http://13.245.209.234', 'http://localhost:3000', 
+  origin: ['/http://13.245.161.92', 'http://localhost:3000', 
  //'https://www.residencespotter.com'
 ]
 }))
@@ -38,7 +38,7 @@ app.use('/api/events', eventRoute);
 app.use('/api/save', saveRoute);
 
 const PORT = process.env.PORT || 5000;
-//process.env.MONGODB_URL
-mongoose.connect('mongodb://localhost:27017/property', { useNewUrlParser: true, useUnifiedTopology: true })
+// 'mongodb://localhost:27017/property'
+mongoose.connect(process.env.MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => app.listen(PORT, () => console.log(`Server Running on Port: http://localhost:${PORT}`)))
   .catch((error) => console.log(`${error} did not connect`));
