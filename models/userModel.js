@@ -13,7 +13,8 @@ const userSchema = new Schema({
     picture: String,
     role: String,
     googleId: String,
-    otp: String
+    otp: String,
+    createdAt: String
 })
 
 const User = mongoose.model('User', userSchema);

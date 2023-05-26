@@ -4,8 +4,27 @@ import Company from '../models/companyModel.js';
 import sendEmail from '../utils/sendEmail.js';
 import dotenv from 'dotenv';
 import otpGenerator from 'otp-generator';
+import { S3Client, PutObjectCommand, GetObjectCommand} from "@aws-sdk/client-s3";
+import crypto from 'crypto';
+import sharp from 'sharp';
 
 dotenv.config();
+
+const bucketName = process.env.COMPANY_BUCKET_NAME
+const bucketRegion = process.env.BUCKET_REGION
+const accessKey = process.env.COMPANY_ACCESS_KEY
+const secreteAccessKey = process.env.COMPANY_SECRETE_ACCESS_KEY
+
+const randomImageName = (bytes = 32) => crypto.randomBytes(bytes).toString('hex');
+
+const s3 = new S3Client({ 
+  credentials: {
+    accessKeyId: accessKey,
+  secretAccessKey: secreteAccessKey,
+  },
+  region: bucketRegion, 
+});
+
 
 export const signin = async (req, res) => {
     //res.set({"Access-Control-Allow-Origin": "https://my-property-finder.vercel.app"});
@@ -72,7 +91,36 @@ export const refresh = async (req, res) => {
         res.clearCookie(process.env.REACT_APP_COMPANY_COOKIE_KEY, { httpOnly: true, sameSite: 'None', secure: true});
        res.json({message: 'cookie cleared'});
     }
-                     
+      
+    export const awsUpload =  async (req, res) => {
+        const {buffer, originalname, mimetype} = req.file;
+          
+         //const uploadedTime = new Date().getTime().toLocaleString();
+         //const buffers = await sharp(buffer).resize({height:1920,width: 1080, fit: "contain"}).toBuffer();
+         const buffers = await sharp(buffer).resize({height: 360,width: 360, fit: "fill"}).toBuffer();
+         const imageName = randomImageName()
+           const params = {
+             Bucket: bucketName,
+             Key: imageName,
+             //uploadedTime+originalname,
+             Body: buffers,
+             ContentType: mimetype,
+           }
+          // const results = await s3.send(new PutObjectCommand(params));
+          //  const getObjectParams = {
+          //    Bucket: bucketName,
+          //    Key: imageName,
+          //  }
+            
+           const comand = new PutObjectCommand(params);
+            await s3.send(comand);
+            https://rs-company-logo.s3.af-south-1.amazonaws.com/518d9bdfedb89ba6e41fcd6688c9bbeb7ff869a85e7c19a79a4befbbbeb2280d
+           res.json({url: `https://rs-company-logo.s3.af-south-1.amazonaws.com/${imageName}`})
+         
+        //    const command = new GetObjectCommand(getObjectParams);
+        //  //const url = await getSignedUrl( s3, command, { expiresIn: 3600 });
+        //   res.status(201).json({url: command});
+           }
 
 export const signup = async (req, res) => {
     //res.set({"Access-Control-Allow-Origin": "https://my-property-finder.vercel.app"});
@@ -90,7 +138,7 @@ export const signup = async (req, res) => {
 
     // const token = jwt.sign({email: result.email, id: result._id}, 'test', { expiresIn: '1h' });
 
-    res.status(200).json({ result });
+    res.status(200).json(result);
     
     } catch (error) {
     res.status(500).json({ message: "Something went wrong."});

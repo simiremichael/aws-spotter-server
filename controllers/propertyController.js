@@ -1,12 +1,33 @@
 import mongoose from "mongoose";
 import express from 'express';
 import Property from "../models/propertyModel.js";
-import NodeGeocoder  from 'node-geocoder';
+//import NodeGeocoder  from 'node-geocoder';
+import { S3Client, PutObjectCommand, DeleteObjectCommand} from "@aws-sdk/client-s3";
+import crypto from 'crypto';
+import sharp from 'sharp';
+import dotenv from 'dotenv';
+ 
+const router = express.Router();  
 
-const router = express.Router();
+dotenv.config(); 
+
+const bucketName = process.env.PROPERTY_BUCKET_NAME
+const bucketRegion = process.env.BUCKET_REGION
+const accessKey = process.env.PROPERTY_ACCESS_KEY
+const secreteAccessKey = process.env.PROPERTY_SECRETE_ACCESS_KEY
+
+const randomImageName = (bytes = 32) => crypto.randomBytes(bytes).toString('hex');
+
+const s3 = new S3Client({ 
+  credentials: {
+    accessKeyId: accessKey,
+  secretAccessKey: secreteAccessKey,
+  },
+  region: bucketRegion, 
+});
 
 export const getProperties = async (req, res) => {
-   // res.set({"Access-Control-Allow-Origin": "https://my-property-finder.vercel.app"});
+
        const {page} = req.query;
     try {
         const LIMIT = 15;
@@ -45,7 +66,7 @@ export const getProperties = async (req, res) => {
 
 export const getPropertyBySearch = async (req, res) => {
 
-   const { search, toggle, type, minPrice, maxPrice, duration, selectBath, selectBed, page} = req.query;
+   const { search, toggle, type, state, minPrice, maxPrice, duration, selectBath, selectBed, page} = req.query;
   const searchResult = new RegExp(search, 'i');
 
     try {
@@ -83,6 +104,9 @@ export const getPropertyBySearch = async (req, res) => {
           if (duration !== '') {
             query.paymentType =  duration;
         }
+        if (state !== '') {
+            query.state =  state;
+        }
 
         const data = await Property.find(query).sort({createdAt: -1}).limit(LIMIT).skip(startIndex);
         res.json({ data, currentPage: Number(page), numberOfPages: Math.ceil(total / LIMIT),total });
@@ -94,7 +118,7 @@ export const getPropertyBySearch = async (req, res) => {
 export const getPropertyBySearchByBuy = async (req, res) => {
     //res.set("Access-Control-Allow-Origin", "*");
 
-    const { searchParams, search, category, sort, bed, bath, minPrice, maxPrice, type, page} = req.query;
+    const { searchParams, search, category, sort, bed, bath, minPrice, maxPrice, state, type, page} = req.query;
     // const search = searchParams.search
     // const datas = await Property.find();
 //    const priceData = datas.map((i) => i.price )
@@ -132,6 +156,9 @@ export const getPropertyBySearchByBuy = async (req, res) => {
             if (bath !== '') {
                 query.bathroom =  bath;
             }
+            if (state !== '') {
+                query.state =  state;
+            }
 
          let sortBy = {} || {createdAt: -1}
          if (sort === 'featured:desc') {
@@ -146,7 +173,7 @@ export const getPropertyBySearchByBuy = async (req, res) => {
             sortBy = {bed: -1}
          } else if (sort === 'build:inc') {
             sortBy = {buildingYear: -1}
-         } else {
+         }else {
             sortBy = {buildingYear: 1}
          }
          const data = await Property.find(query).sort(sortBy).limit(LIMIT).skip(startIndex);
@@ -158,7 +185,7 @@ export const getPropertyBySearchByBuy = async (req, res) => {
  }
  export const getPropertyBySearchByRent = async (req, res) => {
    
-    const { searchParams, search, category, sort, bed, bath, minPrice, maxPrice, type, page} = req.query;
+    const { searchParams, search, category, state, sort, bed, bath, minPrice, maxPrice, type, page} = req.query;
    
     const datas = await Property.find();
 //    const priceData = datas.map((i) => i.price )
@@ -196,6 +223,9 @@ export const getPropertyBySearchByBuy = async (req, res) => {
            if (bath !== '') {
                query.bathroom =  bath;
            }
+           if (state !== '') {
+            query.state =  state;
+        }
 
          let sortBy = {} || {createdAt: -1}
          if (sort === 'featured:desc') {
@@ -222,13 +252,61 @@ export const getPropertyBySearchByBuy = async (req, res) => {
  }
  export const getPropertyByNativeSearch = async (req, res) => {
 
-    const { search, paymentType, bedroom, propertyType, bathroom, minprice, maxprice, minSize, maxSize, toggle, propertyGroup, sort} = req.query;
+    const { search, paymentType, bedroom, propertyType, state, bathroom, minprice, maxprice, minSize, maxSize, toggle, propertyGroup, sort} = req.query;
    const searchResult = new RegExp(search, 'i');
-   const datas = await Property.find();
-    const priceData = datas.map((i) => i.price )
-    const priceDatas = priceData.filter(i => i >= minprice && i <=maxprice);
-    const sizeData = datas.map((i) => i.size )
-    const sizeDatas = sizeData.filter(i => i >= minSize && i <=maxSize);
+//    const datas = await Property.find();
+//     const priceData = datas.map((i) => i.price )
+//     const priceDatas = priceData.filter(i => i >= minprice && i <=maxprice);
+//     const sizeData = datas.map((i) => i.size )
+//     const sizeDatas = sizeData.filter(i => i >= minSize && i <=maxSize);
+
+
+    const query = {};
+    if (minprice !== '' ) {
+   query.price = { $gte: minprice };
+   }
+    if (maxprice !== '') {
+    query.price = { ...query.price, $lte: maxprice };
+     }
+     if (minSize !== '' ) {
+        query.size = { $gte: minSize };
+        }
+         if (maxSize !== '') {
+         query.size = { ...query.size, $lte: maxSize };
+          }
+  if (type !== '') {
+   query.propertyType =  propertyType;
+   }
+   if (paymentType !== '') {
+    query.paymentType =  paymentType;
+    }
+   if (search !== '') {
+       query.$or  = [
+           {location: searchResult},
+           {buildingName: searchResult},
+           {estateName: searchResult},
+           {state: searchResult},
+        ]
+      }
+      if (category !== '') {
+          query.category =  category;
+      }
+      if (bedroom !== '') {
+          query.bedroom = bedroom;
+      }
+      if (bathroom !== '') {
+          query.bathroom =  bathroom;
+      }
+    if (state !== '') {
+        query.state =  state;
+    }
+    if (propertyGroup !== '') {
+        query.propertyGroup =  propertyGroup;
+    }
+    if (toggle !== '') {
+        query.toggle =  toggle;
+    }
+
     let sortBy = {} || {createdAt: -1}
     if (sort === 'featured') {
        sortBy = {featured: -1}
@@ -240,7 +318,7 @@ export const getPropertyBySearchByBuy = async (req, res) => {
        sortBy = {createdAt: -1}
    } 
      try {
-         const data = await Property.find({location: searchResult, price: priceDatas, size: sizeDatas, propertyType: propertyType, propertyGroup: propertyGroup, paymentType: paymentType, bedroom: bedroom, bathroom: bathroom, category: toggle }).sort(sortBy);
+         const data = await Property.find(query).sort(sortBy);
          res.json({ data });
      } catch (error) {
          res.status(404).json({ message: error.message})
@@ -313,7 +391,7 @@ export const getPropertyByAgent = async (req, res) => {
 
 export const commercial = async (req, res) => {
   
-    const { searchParams, search, propertyGroup, category, sort, bed, bath, minPrice, maxPrice, type, page} = req.query;
+    const { searchParams, search, propertyGroup, state, category, sort, bed, bath, minPrice, maxPrice, type, page} = req.query;
   
    const searchResult = new RegExp(search, 'i');
   
@@ -351,6 +429,10 @@ export const commercial = async (req, res) => {
            if (bath !== '') {
                query.bathroom =  bath;
            }
+           if (state !== '') {
+            query.state =  state;
+        }
+
 
          let sortBy = {} || {createdAt: -1}
          if (sort === 'featured:desc') {
@@ -377,7 +459,7 @@ export const commercial = async (req, res) => {
 
 export const newProject = async (req, res) => {
 
-    const { searchParams, search, possession, sort, maxBed, minBed, minPrice, maxPrice, type, propertyGroup, page} = req.query;
+    const { searchParams, search, possession, sort, state, maxBed, minBed, minPrice, maxPrice, type, propertyGroup, page} = req.query;
 
    const searchResult = new RegExp(search, 'i');
  
@@ -416,6 +498,9 @@ export const newProject = async (req, res) => {
          if (possession !== '') {
            query.possession = possession;
          }
+         if (state !== '') {
+            query.state =  state;
+        }
 
          const data = await Property.find(query).sort({createdAt: -1}).limit(LIMIT).skip(startIndex);
          res.json({ data, currentPage: Number(page), numberOfPages: Math.ceil(total / LIMIT), total });
@@ -427,7 +512,7 @@ export const newProject = async (req, res) => {
 
 export const offplan = async (req, res) => {
    
-    const { searchParams, search, possession, sort, maxBed, minBed, minPrice, maxPrice, type, propertyGroup, page} = req.query;
+    const { searchParams, search, possession, state, sort, maxBed, minBed, minPrice, maxPrice, type, propertyGroup, page} = req.query;
 
     // const datas = await Property.find();
     // const priceData = datas.map((i) => i.price )
@@ -470,6 +555,9 @@ export const offplan = async (req, res) => {
           if (possession !== '') {
             query.possession = possession;
           }
+          if (state !== '') {
+            query.state =  state;
+        }
  
           const data = await Property.find(query).sort({createdAt: -1}).limit(LIMIT).skip(startIndex);
          res.json({ data, currentPage: Number(page), numberOfPages: Math.ceil(total / LIMIT), total });
@@ -479,6 +567,38 @@ export const offplan = async (req, res) => {
       }
 }
 
+export const awsUpload =  async (req, res) => {
+    const {id, deleteimg, edit} = req.body
+    const {buffer, originalname, mimetype} = req.file;
+ console.log(req.body)  
+if (edit === 'edit') {
+ s3.send( new DeleteObjectCommand({Bucket: bucketName, Key:  deleteimg})) 
+}  
+     //const uploadedTime = new Date().getTime().toLocaleString();
+     const buffers = await sharp(buffer).resize({height: 500, width: 900, fit: "fill"}).toBuffer();
+    // const buffers = await sharp(buffer).resize({height: 360,width: 360, fit: "contain"}).toBuffer();
+     //const imageName = randomImageName()
+       const params = { 
+         Bucket: bucketName, 
+         Key: id+originalname,
+         Body: buffers,
+         ContentType: mimetype,
+       }
+      // return s3.send(new PutObjectCommand(params));
+      //  const getObjectParams = {
+      //    Bucket: bucketName,
+      //    Key: imageName,
+      //  }
+        
+       const comand = new PutObjectCommand(params);
+        await s3.send(comand);
+    
+       res.json({url: `https://rs-property-image.s3.af-south-1.amazonaws.com/${id+originalname}`, imageName: id+originalname})
+     
+    //    const command = new GetObjectCommand(getObjectParams);
+    //  //const url = await getSignedUrl( s3, command, { expiresIn: 3600 });
+    //   res.status(201).json({url: command});
+       }
 
 export const createProperty = async (req, res) => {
     
@@ -486,28 +606,28 @@ export const createProperty = async (req, res) => {
         companyName, logo, location, description, electricity, images, kitchen, lotSize, lga, livingRoom, serviceCharge,
         paymentType, postCode,  price, propertyGroup, propertyTax, propertyTitle, propertyType, showerRoom,
         size, state, street, taxes, tour, uniqNo, ultilities, video, id, water, yearRenovated, comfort,
-        condition, hvac, parking, pets, security, slideImages, phone, email} = req.body;
+        condition, hvac, parking, pets, security, phone, email, imagename, latitude, longitude } = req.body;
     //  const property = req.body;
-    const options = {
-        provider: 'google',
+    // const options = {
+    //     provider: 'google',
       
-        // Optional depending on the providers
-        //fetch: customFetchImplementation,
-        apiKey: process.env.LOCATION_KEY, // for Mapquest, OpenCage, Google Premier
-        formatter: null // 'gpx', 'string', ...
-      };
-      const geocoder = NodeGeocoder(options);
-      const response = await geocoder.geocode(address);
-      const longitude = Number(response.map(long => long.longitude));
-      const latitude = Number(response.map(lat => lat.latitude));
+    //     // Optional depending on the providers
+    //     //fetch: customFetchImplementation,
+    //     apiKey: process.env.LOCATION_KEY, // for Mapquest, OpenCage, Google Premier
+    //     formatter: null // 'gpx', 'string', ...
+    //   };
+    //   const geocoder = NodeGeocoder(options);
+    //   const response = await geocoder.geocode(address);
+    //   const longitude = Number(response.map(long => long.longitude));
+    //   const latitude = Number(response.map(lat => lat.latitude));
 
-    const newProperty = new Property({ longitude, latitude, category, title, address, estateName, buildingName, developer, bedroom,  bathroom, buildingYear,
-        name: req.name, profilePicture: req.profilePicture, phone: req.phone, email: req.email,
+    const newProperty = new Property({ latitude, longitude, category, title, address, estateName, buildingName, developer, bedroom,  bathroom, buildingYear,
+        name: req.name, profilePicture: req.profilePicture, phone: req.phone, email: req.email, imagename,
         logo: req.companyLogo, companyAddress: req.companyAddress, companyName: req.companyName,
         location, description, electricity, images, kitchen, lotSize, lga, livingRoom, serviceCharge,
         paymentType, postCode,  price, propertyGroup, propertyTax, propertyTitle, propertyType, showerRoom,
         size, state, street, taxes, tour, uniqNo, ultilities, video, water, yearRenovated, comfort,
-        condition, hvac, parking, pets, companyId: req.companyId, security, creator: req.agentId, id,slideImages, createdAt: new Date().toLocaleString()})
+        condition, hvac, parking, pets, companyId: req.companyId, security, creator: req.agentId, id, createdAt: new Date().toLocaleString()})
   
     // const property = req.body;
 
@@ -528,28 +648,29 @@ export const updateProperty = async (req, res) => {
     const {  title, address, estateName, buildingName, developer, bathroom, buildingYear,logo, companyAddress, companyName,
         category,location, description, electricity, images, kitchen, lotSize, lga, livingRoom, serviceCharge,
         paymentType, postCode,  price, propertyGroup, propertyTax, propertyTitle, propertyType, showerRoom,
-        size, state, street, tax, tour, uniqNo, ultilities, video, water, yearRenovated, comfort,
-        condition, hvac, parking, pets, security, slideImages, phone, email } = req.body;
-        const options = {
-            provider: 'google',
+        size, state, street, tax, tour, uniqNo, ultilities, video, water, yearRenovated, comfort, imagename,
+        condition, hvac, parking, pets, security, phone, email, latitude, longitude } = req.body;
+        // const options = {
+        //     provider: 'google',
           
-            // Optional depending on the providers
-            //fetch: customFetchImplementation,
-            apiKey: process.env.LOCATION_KEY, // for Mapquest, OpenCage, Google Premier
-            formatter: null // 'gpx', 'string', ...
-          };
-          const geocoder = NodeGeocoder(options);
-          const response = await geocoder.geocode(address);
-          const longitude = Number(response.map(long => long.longitude));
-          const latitude = Number(response.map(lat => lat.latitude));
+        //     // Optional depending on the providers
+        //     //fetch: customFetchImplementation,
+        //     apiKey: process.env.LOCATION_KEY, // for Mapquest, OpenCage, Google Premier
+        //     formatter: null // 'gpx', 'string', ...
+        //   };
+        //   const geocoder = NodeGeocoder(options);
+        //   const response = await geocoder.geocode(address);
+        //   const longitude = Number(response.map(long => long.longitude));
+        //   const latitude = Number(response.map(lat => lat.latitude));
 
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(404).send(`No post with id: ${id}`);
-    const updatedProperty = { longitude, latitude, category, title, address, estateName, buildingName, developer, bathroom, bathroom, buildingYear, phone: req.phone, email: req.email,
+    const updatedProperty = { longitude, latitude, category, title, address, estateName, buildingName, developer, bathroom, bathroom, buildingYear, 
         category,location, description, electricity, images, kitchen, lotSize, lga, livingRoom, serviceCharge,
-        paymentType, postCode,  price, propertyGroup, propertyTax, propertyTitle, propertyType, showerRoom,
-        size, state, street, tax, tour, uniqNo, ultilities, video, water, yearRenovated, comfort, slideImages,
-        condition, hvac, parking, pets, security, createdAt: new Date().toLocaleString(), companyId: req.companyId,
-        logo: req.companyLogo, companyAddress: req.companyAddress, companyName: req.companyName, name: req.name, profilePicture: req.profilePicture,
+        paymentType, postCode,  price, propertyGroup, propertyTax, propertyTitle, propertyType, imagename,
+        size, state, street, tax, tour, uniqNo, ultilities, video, water, yearRenovated, comfort, latitude, longitude,
+        condition, hvac, parking, pets, security, createdAt: new Date().toLocaleString(), 
+        //companyId: req.companyId, phone: req.phone, email: req.email,
+       // logo: req.companyLogo, companyAddress: req.companyAddress, companyName: req.companyName, name: req.name, profilePicture: req.profilePicture,
     };
 
     await Property.findByIdAndUpdate(id, updatedProperty, { new: true });                    
@@ -559,18 +680,36 @@ export const updateProperty = async (req, res) => {
  }
 
  export const deleteProperty = async (req, res) => {
-   // res.set({"Access-Control-Allow-Origin": "https://my-property-finder.vercel.app"});             
+              
     const {id} = req.params;
     if(!mongoose.Types.ObjectId.isValid(id)) return res.status(404).send('no post with that id');
+    const property = await Property.findOne({_id: id})
+      
+      if (property.imagename.length >= 1) {
+  //console.log(property.imagename)
+  const params = {
+    Bucket: bucketName,
+    Key: property.imagename[0].key
+  }
 
+  if (property.imagename.length > 1) {
+      property.imagename.filter((filt) => {
+    s3.send( new DeleteObjectCommand({Bucket: bucketName, Key: filt.key}))
+  })
+} else {
+    s3.send(new DeleteObjectCommand(params));
+} 
+
+await Property.findByIdAndRemove(id);
+res.json({message: 'Property deleted successfully'});
+    } else {
     await Property.findByIdAndRemove(id);
-
-    res.json({message: 'Post deleted successfully'});
-
+    res.json({message: 'Property deleted successfully'});
+    }
   }
   
   export const companyProperties = async (req, res) => {
-    //res.set({"Access-Control-Allow-Origin": "https://my-property-finder.vercel.app"});
+   
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(404).json({ message: "Property doesn't exist" });
@@ -579,7 +718,19 @@ export const updateProperty = async (req, res) => {
     res.status(200).json(companyProperty);
   };
 
-
+//   export const awsDelete = async (req, res) => {
+              
+//     const {id} = req.params;
+//     if(!mongoose.Types.ObjectId.isValid(id)) return res.status(404).send('no post with that id');
+//     const property = await Property.findOne({_id: id})
+//        console.log(id)
+//       property.imagename.filter((filt) => {
+//     s3.send( new DeleteObjectCommand({Bucket: bucketName, Key: filt.key})) 
+//     console.log(filt)
+//   })
+//     //res.json({message: 'Image deleted successfully'});
+//     console.log('Property deleted successfully')
+//   }
 
 //   export const likePost = async (req, res) => {
 //     const { id } = req.params;

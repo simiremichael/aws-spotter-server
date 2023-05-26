@@ -12,6 +12,9 @@
   "author": "Michael Simire",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.335.0",
+    "@aws-sdk/s3-request-presigner": "^3.335.0",
+    "aws-sdk": "^2.1381.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.0",
     "cloudinary": "^1.35.0",
@@ -33,12 +36,15 @@
     "nodemon": "^2.0.20",
     "otp-generator": "^4.0.1",
     "serverless-http": "^3.1.1",
+    "sharp": "^0.32.1",
     "socket.io": "^4.6.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.2",
     "@types/cors": "^2.8.12",
     "@types/express": "^4.17.14",
-    "@types/jsonwebtoken": "^9.0.0"
+    "@types/jsonwebtoken": "^9.0.0",
+    "@types/multer": "^1.4.7",
+    "@types/otp-generator": "^4.0.0"
   }
 }

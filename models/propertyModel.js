@@ -54,7 +54,7 @@ const propertySchema = new Schema({
     logo: String,
     companyId: String,
     companyAddress: String,
-    name: String,
+    name: String, 
     profilePicture: String,
     slideImages: [],
     phone: String,
@@ -64,7 +64,7 @@ const propertySchema = new Schema({
     featured: String,
     building: String,
     estate: String,
-
+    imagename: []
 })
 
 const Property = mongoose.model('Property', propertySchema);

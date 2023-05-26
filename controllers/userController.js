@@ -4,11 +4,30 @@ import User from '../models/userModel.js';
 import dotenv from 'dotenv';
 import sendEmail from '../utils/sendEmail.js';
 import otpGenerator from 'otp-generator';
+import { S3Client, PutObjectCommand, GetObjectCommand} from "@aws-sdk/client-s3";
+import crypto from 'crypto';
+import sharp from 'sharp';
+//import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 dotenv.config();
 
+const bucketName = process.env.BUCKET_NAME
+const bucketRegion = process.env.BUCKET_REGION
+const accessKey = process.env.ACCESS_KEY
+const secreteAccessKey = process.env.SECRETE_ACCESS_KEY
+
+const randomImageName = (bytes = 32) => crypto.randomBytes(bytes).toString('hex');
+
+const s3 = new S3Client({ 
+  credentials: {
+    accessKeyId: accessKey,
+  secretAccessKey: secreteAccessKey,
+  },
+  region: bucketRegion, 
+});
+
 export const signin = async (req, res) => {
-  //res.set({"Access-Control-Allow-Origin": "https://my-property-finder.vercel.app"});
+
 const {email, password} = req.body;
 try{
     const existingUser = await User.findOne({email: email.toLowerCase()});
@@ -43,7 +62,7 @@ export const refresh = async (req, res) => {
             if (err) return res.status(403).json({message: 'Forbidden'});
             const foundUser = await User.findOne({email: decoded.email});
             if (!foundUser) return res.status(401).json({message: 'Unauthorized'});
-            
+    
             const token = jwt.sign({ email: foundUser.email, id: foundUser._id}, process.env.REACT_APP_TOKEN_KEY, { expiresIn: '7d' });
             res.json({token})
         })
@@ -54,28 +73,59 @@ export const refresh = async (req, res) => {
         if (!cookies.jws) return res.status(204);
         res.clearCookie(process.env.REACT_APP_USER_COOKIE_KEY, { httpOnly: true, sameSite: 'None', secure: true });
        res.json({message: 'cookie cleared'});
-    }
+    };
 
-export const signup = async (req, res) => {
- // res.set({"Access-Control-Allow-Origin": "https://my-property-finder.vercel.app"});
-    const { email, password, role, confirmPassword, picture, family_name, given_name, firstName, lastName, phone} = req.body;
+    export const awsUpload =  async (req, res) => {
+    const {buffer, originalname, mimetype} = req.file;
+      
+     //const uploadedTime = new Date().getTime().toLocaleString();
+     //const buffers = await sharp(buffer).resize({height:1920,width: 1080, fit: "contain"}).toBuffer();
+     const buffers = await sharp(buffer).resize({height: 360,width: 360, fit: "fill"}).toBuffer();
+     const imageName = randomImageName()
+       const params = {
+         Bucket: bucketName,
+         Key: imageName,
+         //uploadedTime+originalname,
+         Body: buffers,
+         ContentType: mimetype,
+       }
+      // const results = await s3.send(new PutObjectCommand(params));
+      //  const getObjectParams = {
+      //    Bucket: bucketName,
+      //    Key: imageName,
+      //  }
+        
+       const comand = new PutObjectCommand(params);
+        await s3.send(comand);
 
-    try {
-        const existingUser = await User.findOne({email: email.toLowerCase()});
-    if(existingUser) return res.status(400).json({ message: "User already exists"})
+       res.json({url: `https://rs-profile-picture.s3.af-south-1.amazonaws.com/${imageName}`})
+     
+    //    const command = new GetObjectCommand(getObjectParams);
+    //  //const url = await getSignedUrl( s3, command, { expiresIn: 3600 });
+    //   res.status(201).json({url: command});
+       }
 
-     if(password !== confirmPassword) return res.status(400).json({ message: "Password does not match"})
+export const signup =  async (req, res) => {
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+  const { email, password, role, confirmPassword, picture, family_name, given_name, firstName, lastName, phone} = req.body;
 
-    const result = await User.create({ email: email.toLowerCase(), password: hashedPassword, role, picture, name1: `${family_name} ${given_name}`, name: `${firstName} ${lastName}`, phone, createdAt: new Date().toISOString()})
+  try {
+      const existingUser = await User.findOne({email: email.toLowerCase()});
+  if(existingUser) return res.status(400).json({ message: "User already exists"})
 
-    // const token = jwt.sign({email: result.email, id: result._id}, 'test', { expiresIn: '1h' });
+   if(password !== confirmPassword) return res.status(400).json({ message: "Password does not match"})
 
-    res.status(200).json({ result, token });
-    } catch (error) {
-    res.status(500).json({ message: "Something went wrong."});
-    }
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  const result = await User.create({ email: email.toLowerCase(), password: hashedPassword, role, picture, name1: `${family_name} ${given_name}`, name: `${firstName} ${lastName}`, phone, createdAt: new Date().toLocaleString()})
+
+  // const token = jwt.sign({email: result.email, id: result._id}, 'test', { expiresIn: '1h' });
+
+  res.status(200).json(result);
+
+  } catch (error) {
+  res.status(500).json({ message: "Something went wrong."});
+  }
 }
 
 export const googleSignIn = async (req, res) => {

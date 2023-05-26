@@ -2,11 +2,15 @@ import express from 'express';
 import { getPropertyBySearch, moreProperty, getProperties, 
 createProperty, updateProperty, deleteProperty, getProperty,
  getPropertyByAgent, companyPropertySearch, getPropertyBySearchByBuy, 
- getPropertyBySearchByRent, newProject, offplan, commercial, companyProperties, getPropertyByNativeSearch, getNativePropertyByAgent} 
+ getPropertyBySearchByRent, newProject, offplan, awsUpload, commercial, companyProperties, getPropertyByNativeSearch, getNativePropertyByAgent} 
   from '../controllers/propertyController.js';
 import agentAuth from '../middleware/agentAuth.js';
-
+import multer from 'multer';
+ 
 const propertyRoute = express.Router();
+
+const storage = multer.memoryStorage()
+const upload = multer({ storage: storage })
 
 propertyRoute.get('/nativesearch', getPropertyByNativeSearch);
 propertyRoute.get('/search', getPropertyBySearch);
@@ -25,5 +29,7 @@ propertyRoute.get('/agentProperties/:id', agentAuth, getPropertyByAgent);
 propertyRoute.get('/nativeAgentProperties/:id', getNativePropertyByAgent);
 propertyRoute.get('/adminHomepage/propertyList/:id', companyPropertySearch); 
 propertyRoute.get('/companyProperties/:id', companyProperties);
+propertyRoute.post('/upload', upload.single('picture'), awsUpload);
+//propertyRoute.post('/delete/:id',  awsDelete);
 
-export default propertyRoute; 
+export default propertyRoute;  
