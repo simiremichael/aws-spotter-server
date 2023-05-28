@@ -6,7 +6,7 @@ createProperty, updateProperty, deleteProperty, getProperty,
   from '../controllers/propertyController.js';
 import agentAuth from '../middleware/agentAuth.js';
 import multer from 'multer';
- 
+  
 const propertyRoute = express.Router();
 
 const storage = multer.memoryStorage()

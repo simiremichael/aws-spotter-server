@@ -125,7 +125,6 @@ export const refresh = async (req, res) => {
 export const signup = async (req, res) => {
     //res.set({"Access-Control-Allow-Origin": "https://my-property-finder.vercel.app"});
     const {logo, address, companyName, email, password, confirmPassword, area, state, L_G_A, agent,role, } = req.body;
-
     try {
         const existingCompany = await Company.findOne({email});
     if(existingCompany) return res.status(400).json({ message: "Company already exists"})
