@@ -6,7 +6,7 @@ createProperty, updateProperty, deleteProperty, getProperty,
   from '../controllers/propertyController.js';
 import agentAuth from '../middleware/agentAuth.js';
 import multer from 'multer';
-  
+   
 const propertyRoute = express.Router();
 
 const storage = multer.memoryStorage()
@@ -32,4 +32,4 @@ propertyRoute.get('/companyProperties/:id', companyProperties);
 propertyRoute.post('/upload', upload.single('picture'), awsUpload);
 //propertyRoute.post('/delete/:id',  awsDelete);
 
-export default propertyRoute;  
+export default propertyRoute;   

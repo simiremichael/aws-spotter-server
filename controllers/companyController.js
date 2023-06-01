@@ -7,6 +7,7 @@ import otpGenerator from 'otp-generator';
 import { S3Client, PutObjectCommand, GetObjectCommand} from "@aws-sdk/client-s3";
 import crypto from 'crypto';
 import sharp from 'sharp';
+import mongoose from "mongoose";
 
 dotenv.config();
 
@@ -143,6 +144,27 @@ export const signup = async (req, res) => {
     res.status(500).json({ message: "Something went wrong."});
     }
 }
+
+export const updateCompany = async (req, res) => {
+  
+    const { id } = req.params;
+
+    const { logo, address, companyName, email, area, password, confirmPassword, state, L_G_A, agent,role } = req.body;
+    console.log(id, req.body);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(404).send(`No property with id: ${id}`);
+
+    if(password !== confirmPassword) return res.status(400).json({ message: "Password does not match"})
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const updatedCompany = { logo, address, companyName, password: hashedPassword, email,agent, area, state, L_G_A,  role, createdAt: new Date().toLocaleString()};
+
+    await Company.findByIdAndUpdate(id, updatedCompany, { new: true });                    
+
+    res.json(updatedCompany);
+
+ }
 
 export const getCompanies = async (req, res) => {
     //res.set({"Access-Control-Allow-Origin": "https://my-property-finder.vercel.app"});
