@@ -1,5 +1,5 @@
 
-FROM node:18.13.0 
+FROM node:18
 
 # Create app directory
 WORKDIR /api
@@ -36,3 +36,4 @@ ENV AGENT_SECRETE_ACCESS_KEY='I1YIkFwZPR5w4BP6udeRBomnqFxI0Tdf4QXiOcK5'
 EXPOSE 5000
 
 CMD [ "npm", "start"]
+# ENTRYPOINT npm start
