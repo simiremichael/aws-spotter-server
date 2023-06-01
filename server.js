@@ -23,7 +23,7 @@ app.use(cookieParser())
 
  app.use(cors({
     credentials: true,
-    origin: ['http://13.244.231.245', 'http://localhost:3000', 
+    origin: ['http://13.245.209.202', 'http://localhost:3000', 
    'https://www.residencespotter.com'
     ],
     headers: 'x-www-form-urlencoded, Origin, X-Requested-With, Content-Type, Accept, Authorization, authorization, userauthorization,userAuthorization, comauthorization, comAuthorization, *'
