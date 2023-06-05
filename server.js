@@ -17,14 +17,13 @@ const app = express();
 
 dotenv.config();
 
-app.use(bodyParser.json({ limit: '30mb', extended: true }))
-app.use(bodyParser.urlencoded({ limit: '30mb', extended: true }))
+app.use(bodyParser.json({ limit: '50mb', extended: true }))
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }))
 app.use(cookieParser())
 
  app.use(cors({
     credentials: true,
-    origin: ['https://main.d31maya3ht9jgz.amplifyapp.com', 'http://localhost:3000', 
-   'https://www.residencespotter.com'
+    origin: [ 'https://www.residencespotter.com', 'https://main.d31maya3ht9jgz.amplifyapp.com', 'http://localhost:3000', 
     ],
     headers: 'x-www-form-urlencoded, Origin, X-Requested-With, Content-Type, Accept, Authorization, authorization, userauthorization,userAuthorization, comauthorization, comAuthorization, *'
   }))
