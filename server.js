@@ -23,7 +23,7 @@ app.use(cookieParser())
 
  app.use(cors({
     credentials: true,
-    origin: [ 'https://www.residencespotter.com', 'https://main.d31maya3ht9jgz.amplifyapp.com', 'http://localhost:3000', 
+    origin: ['https://main.d31maya3ht9jgz.amplifyapp.com', 'http://localhost:3000', 
     ],
     headers: 'x-www-form-urlencoded, Origin, X-Requested-With, Content-Type, Accept, Authorization, authorization, userauthorization,userAuthorization, comauthorization, comAuthorization, *'
   }))
