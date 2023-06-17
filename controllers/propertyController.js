@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+                                                                                                                                                                                                           
 import express from 'express';
 import Property from "../models/propertyModel.js";
 //import NodeGeocoder  from 'node-geocoder';
@@ -16,7 +16,7 @@ const bucketRegion = process.env.BUCKET_REGION
 const accessKey = process.env.PROPERTY_ACCESS_KEY
 const secreteAccessKey = process.env.PROPERTY_SECRETE_ACCESS_KEY
 
-const randomImageName = (bytes = 32) => crypto.randomBytes(bytes).toString('hex');
+//const randomImageName = (bytes = 32) => crypto.randomBytes(bytes).toString('hex');
 
 const s3 = new S3Client({ 
   credentials: {
@@ -570,7 +570,6 @@ export const offplan = async (req, res) => {
 export const awsUpload =  async (req, res) => {
     const {id, deleteimg, edit} = req.body
     const {buffer, originalname, mimetype} = req.file;
- console.log(req.body)  
 if (edit === 'edit') {
  s3.send( new DeleteObjectCommand({Bucket: bucketName, Key:  deleteimg})) 
 }  
