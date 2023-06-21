@@ -35,7 +35,7 @@ try{
     if(!existingCompany) return res.status(404).json({ message: "Company doesn't exist"})
    
     const isPasswordCorrect = await bcrypt.compare(password, existingCompany.password);
-    if(!isPasswordCorrect ) return res.status(404).json({ message: "Invalid credentials."});
+    if(!isPasswordCorrect ) return res.status(404).json({ message: "Invalid password"});
     
     const companyToken = jwt.sign({logo: existingCompany.logo, address: existingCompany.address, companyName: existingCompany.companyName, email: existingCompany.email, id: existingCompany._id}, process.env.REACT_APP_TOKEN_KEY, { expiresIn: '3m' });
     const refreshToken = jwt.sign({logo: existingCompany.logo, address: existingCompany.address, companyName: existingCompany.companyName, email: existingCompany.email, id: existingCompany._id}, process.env.REACT_APP_TOKEN_KEY, { expiresIn: '7d' });
@@ -125,16 +125,22 @@ export const refresh = async (req, res) => {
 
 export const signup = async (req, res) => {
     //res.set({"Access-Control-Allow-Origin": "https://my-property-finder.vercel.app"});
-    const {logo, address, companyName, email, password, confirmPassword, area, state, L_G_A, agent,role, } = req.body;
+    const {logo, address, companyName, email, password, confirmPassword, area, state, L_G_A, phone, role, } = req.body;
     try {
+        if (companyName === '') return res.status(403).json({message: 'Company name is required'})
+        if (phone === '') return res.status(403).json({message: 'Phone number is required'})
         const existingCompany = await Company.findOne({email});
     if(existingCompany) return res.status(400).json({ message: "Company already exists"})
 
     if(password !== confirmPassword) return res.status(400).json({ message: "Password does not match"})
+    if (address === '') return res.status(403).json({message: 'Address is required'})
+    if (state === '') return res.status(403).json({message: 'State is required'})
+    if ( area === '') return res.status(403).json({message: 'Area is required'})
+    if (L_G_A === '') return res.status(403).json({message: 'L_G_A is required'})
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const result = await Company.create({logo, address, companyName, email, password: hashedPassword, agent, area, state, L_G_A,  role, createdAt: new Date().toLocaleString()})
+    const result = await Company.create({logo, address, companyName, email, password: hashedPassword, phone, area, state, L_G_A,  role, createdAt: new Date().toLocaleString()})
 
     // const token = jwt.sign({email: result.email, id: result._id}, 'test', { expiresIn: '1h' });
 

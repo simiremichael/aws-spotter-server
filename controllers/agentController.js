@@ -33,10 +33,10 @@ export const signin = async (req, res) => {
 
     try{
         const existingAgent = await Agent.findOne({email});
-        if(!existingAgent) return res.status(404).json({ message: "Agent doesn't exist"})
+        if(!existingAgent) return res.status(404).json({ message: "Agent not found"})
        
-        const isPasswordCorrect = bcrypt.compare(password, existingAgent.password);
-        if(!isPasswordCorrect ) return res.status(404).json({ message: "Invalid credentials."});
+    const isPasswordCorrect = await bcrypt.compare(password, existingAgent.password);
+        if(!isPasswordCorrect ) return res.status(404).json({ message: "Ivalid password"});
         
         const agentToken = jwt.sign({ phone: existingAgent.phone, profilePicture: existingAgent.profilePicture, name: existingAgent.name, logo: existingAgent.logo, companyName: existingAgent.companyName, companyId: existingAgent.companyId, address: existingAgent.address, email: existingAgent.email, id: existingAgent._id}, process.env.REACT_APP_TOKEN_KEY, { expiresIn: '3m' });
         const refreshToken = jwt.sign({phone: existingAgent.phone, profilePicture: existingAgent.profilePicture, name: existingAgent.name, logo: existingAgent.logo, companyName: existingAgent.companyName, companyId: existingAgent.companyId, address: existingAgent.address, email: existingAgent.email, id: existingAgent._id}, process.env.REACT_APP_TOKEN_KEY, { expiresIn: '7d' });
@@ -197,7 +197,7 @@ export const updateAgent = async (req, res) => {
 
     await Agent.findByIdAndRemove(id);
 
-    res.json({message: 'Post deleted successfully'});
+    res.send({message: 'Post deleted successfully'});
 
   };
 
@@ -228,9 +228,9 @@ export const updateAgent = async (req, res) => {
        await Agent.findByIdAndUpdate(id, generatedOTP, { new: true });  
  
       res.status(201).json({generatedOTP});
-      return res.status(201).json({ message: "OTP sent successfully"})
+      return res.status(201).send({ message: "OTP sent successfully"})
      }
-     if(!existingAgent) return res.status(404).json({ message: "Invalid Email"})
+     if(!existingAgent) return res.status(404).send({ message: "Invalid Email"})
  
    } catch (error) {
      return res.status(500).send({ message: 'failed to create OTP'});
