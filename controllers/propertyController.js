@@ -249,7 +249,7 @@ export const getPropertyBySearchByBuy = async (req, res) => {
  export const getPropertyByNativeSearch = async (req, res) => {
 
     const { search, paymentType, bedroom, propertyType, state, bathroom, minprice, maxprice, minSize, maxSize, toggle, propertyGroup, category, sort} = req.query;
- if(search === '') return res.json({message: 'search in empty'});
+ if(search !== '') return res.json({message: 'search data available'});
 
     const searchResult = new RegExp(search, 'i');
 
