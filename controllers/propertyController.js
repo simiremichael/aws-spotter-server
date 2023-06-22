@@ -187,11 +187,7 @@ export const getPropertyBySearchByBuy = async (req, res) => {
    
     const { searchParams, search, category, state, sort, bed, bath, minPrice, maxPrice, type, page} = req.query;
    
-    const datas = await Property.find();
-//    const priceData = datas.map((i) => i.price )
-//    const priceDatas = priceData.filter(i => i >= minPrice && i <=maxPrice);
    const searchResult = new RegExp(search, 'i');
-    //console.log(searchResult, priceDatas, priceData, bed, bath);
      try {
          const LIMIT = 15;
          const startIndex =(Number(page) - 1) * LIMIT;
@@ -255,70 +251,65 @@ export const getPropertyBySearchByBuy = async (req, res) => {
     const { search, paymentType, bedroom, propertyType, state, bathroom, minprice, maxprice, minSize, maxSize, toggle, propertyGroup, category, sort} = req.query;
  
     const searchResult = new RegExp(search, 'i');
-//    const datas = await Property.find();
-//     const priceData = datas.map((i) => i.price )
-//     const priceDatas = priceData.filter(i => i >= minprice && i <=maxprice);
-//     const sizeData = datas.map((i) => i.size )
-//     const sizeDatas = sizeData.filter(i => i >= minSize && i <=maxSize);
 
-
-    const query = {};
-    if (minprice !== '' ) {
-   query.price = { $gte: minprice };
-   }
-    if (maxprice !== '') {
-    query.price = { ...query.price, $lte: maxprice };
-     }
-     if (minSize !== '' ) {
-        query.size = { $gte: minSize };
-        }
-         if (maxSize !== '') {
-         query.size = { ...query.size, $lte: maxSize };
-          }
-  if (propertyType !== '') {
-   query.propertyType =  propertyType;
-   }
-   if (paymentType !== '') {
-    query.paymentType =  paymentType;
-    }
-   if (search !== '') {
-       query.$or  = [
-           {location: searchResult},
-           {buildingName: searchResult},
-           {estateName: searchResult},
-           {state: searchResult},
-        ]
-      }
-      if (category !== '') {
-          query.category =  category;
-      }
-      if (bedroom !== '') {
-          query.bedroom = bedroom;
-      }
-      if (bathroom !== '') {
-          query.bathroom =  bathroom;
-      }
-    if (state !== '') {
-        query.state =  state;
-    }
-    if (propertyGroup !== '') {
-        query.propertyGroup =  propertyGroup;
-    }
-    if (toggle !== '') {
-        query.toggle =  toggle;
-    }
-
-    let sortBy = {} || {createdAt: -1}
-    if (sort === 'featured') {
-       sortBy = {featured: -1}
-    } else if (sort === 'minPrice') {
-       sortBy = {price: 1}
-    } else if (sort === 'maxPrice') {
-       sortBy = {price: -1}
-    } else  {
-       sortBy = {createdAt: -1}
-   } 
      try {
+        const query = {};
+        if (minprice !== '' ) {
+       query.price = { $gte: minprice };
+       }
+        if (maxprice !== '') {
+        query.price = { ...query.price, $lte: maxprice };
+         }
+         if (minSize !== '' ) {
+            query.size = { $gte: minSize };
+            }
+             if (maxSize !== '') {
+             query.size = { ...query.size, $lte: maxSize };
+              }
+      if (propertyType !== '') {
+       query.propertyType =  propertyType;
+       }
+       if (paymentType !== '') {
+        query.paymentType =  paymentType;
+        }
+       if (search !== '') {
+           query.$or  = [
+               {location: searchResult},
+               {buildingName: searchResult},
+               {estateName: searchResult},
+               {state: searchResult},
+            ]
+          }
+          if (category !== '') {
+              query.category =  category;
+          }
+          if (bedroom !== '') {
+              query.bedroom = bedroom;
+          }
+          if (bathroom !== '') {
+              query.bathroom =  bathroom;
+          }
+        if (state !== '') {
+            query.state =  state;
+        }
+        if (propertyGroup !== '') {
+            query.propertyGroup =  propertyGroup;
+        }
+        if (toggle !== '') {
+            query.toggle =  toggle;
+        }
+    
+        let sortBy = {} || {createdAt: -1}
+        if (sort === 'featured') {
+           sortBy = {featured: -1}
+        } else if (sort === 'minPrice') {
+           sortBy = {price: 1}
+        } else if (sort === 'maxPrice') {
+           sortBy = {price: -1}
+        } else  {
+           sortBy = {createdAt: -1}
+       } 
+
          const data = await Property.find(query).sort(sortBy);
          res.json({ data });
      } catch (error) {
