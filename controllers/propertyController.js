@@ -253,7 +253,8 @@ export const getPropertyBySearchByBuy = async (req, res) => {
  export const getPropertyByNativeSearch = async (req, res) => {
 
     const { search, paymentType, bedroom, propertyType, state, bathroom, minprice, maxprice, minSize, maxSize, toggle, propertyGroup, sort} = req.query;
-   const searchResult = new RegExp(search, 'i');
+  console.log(search, minSize, maxSize, toggle, propertyGroup, sort);
+    const searchResult = new RegExp(search, 'i');
 //    const datas = await Property.find();
 //     const priceData = datas.map((i) => i.price )
 //     const priceDatas = priceData.filter(i => i >= minprice && i <=maxprice);

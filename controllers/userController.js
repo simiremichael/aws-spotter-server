@@ -29,6 +29,7 @@ const s3 = new S3Client({
 export const signin = async (req, res) => {
 
 const {email, password} = req.body;
+console.log(email, password);
 try{
     const existingUser = await User.findOne({email: email.toLowerCase()});
     if(!existingUser) return res.status(404).json({ message: "User doesn't exist"});
