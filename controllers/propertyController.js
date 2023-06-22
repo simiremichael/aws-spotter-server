@@ -310,7 +310,7 @@ export const getPropertyBySearchByBuy = async (req, res) => {
            sortBy = {createdAt: -1}
        } 
 
-         const data = await Property.find(query).sort(sortBy);
+         const data = await Property.find({toggle: 'rent'}).sort(sortBy);
          res.json({ data });
      } catch (error) {
          res.status(404).json({ message: error.message})
