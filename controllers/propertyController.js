@@ -274,7 +274,7 @@ export const getPropertyBySearchByBuy = async (req, res) => {
          if (maxSize !== '') {
          query.size = { ...query.size, $lte: maxSize };
           }
-  if (type !== '') {
+  if (propertyType !== '') {
    query.propertyType =  propertyType;
    }
    if (paymentType !== '') {
