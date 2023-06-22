@@ -249,7 +249,8 @@ export const getPropertyBySearchByBuy = async (req, res) => {
  export const getPropertyByNativeSearch = async (req, res) => {
 
     const { search, paymentType, bedroom, propertyType, state, bathroom, minprice, maxprice, minSize, maxSize, toggle, propertyGroup, category, sort} = req.query;
- 
+ if(search === '') return res.json({message: 'search in empty'});
+
     const searchResult = new RegExp(search, 'i');
 
      try {
@@ -310,7 +311,7 @@ export const getPropertyBySearchByBuy = async (req, res) => {
            sortBy = {createdAt: -1}
        } 
 
-         const data = await Property.find({toggle: 'rent'}).sort(sortBy);
+         const data = await Property.find({toggle: toggle}).sort(sortBy);
          res.json({ data });
      } catch (error) {
          res.status(404).json({ message: error.message})
