@@ -19,4 +19,4 @@ companyRoute.post('/logout', logout)
 companyRoute.patch('/generateOTP', generateCompanyOTP)
 companyRoute.patch('/resetPassword', resetCompanyPassword)
 
-export default companyRoute; 
+export default companyRoute;  

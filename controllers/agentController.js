@@ -1,4 +1,4 @@
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Agent from '../models/agentModel.js';
 import mongoose from "mongoose";
@@ -30,13 +30,13 @@ const s3 = new S3Client({
 export const signin = async (req, res) => {
   
     const {email, password} = req.body; 
-
     try{
-        const existingAgent = await Agent.findOne({email});
-        if(!existingAgent) return res.status(404).json({ message: "Agent not found"})
+        const existingAgent = await Agent.findOne({email: email.toLowerCase()});
+        if(!existingAgent) return res.status(404).json({ message: "Agent not found"});
        
-    const isPasswordCorrect = await bcrypt.compare(password, existingAgent.password);
-        if(!isPasswordCorrect ) return res.status(404).json({ message: "Ivalid password"});
+        const isPasswordCorrect = await bcrypt.compare(password, existingAgent.password);
+        if(!isPasswordCorrect ) return res.status(404).json({ message: "Invalid password"});
+      
         
         const agentToken = jwt.sign({ phone: existingAgent.phone, profilePicture: existingAgent.profilePicture, name: existingAgent.name, logo: existingAgent.logo, companyName: existingAgent.companyName, companyId: existingAgent.companyId, address: existingAgent.address, email: existingAgent.email, id: existingAgent._id}, process.env.REACT_APP_TOKEN_KEY, { expiresIn: '3m' });
         const refreshToken = jwt.sign({phone: existingAgent.phone, profilePicture: existingAgent.profilePicture, name: existingAgent.name, logo: existingAgent.logo, companyName: existingAgent.companyName, companyId: existingAgent.companyId, address: existingAgent.address, email: existingAgent.email, id: existingAgent._id}, process.env.REACT_APP_TOKEN_KEY, { expiresIn: '7d' });
@@ -97,9 +97,9 @@ export const refresh = async (req, res) => {
     // const {email, password} = req.body; 
 
     const cookies = req.cookies;
-    if (!cookies?.jwa) return res.sendStatus(401);
-    const refreshToken = cookies.jwa;                              
-    // evaluate jwt 
+    if (!cookies?.Residencespotterjwa) return res.sendStatus(401);
+    const refreshToken = cookies.Residencespotterjwa;                              
+    // evaluate jwt  
     jwt.verify(
         refreshToken,
         process.env.REACT_APP_TOKEN_KEY,
@@ -116,7 +116,7 @@ export const refresh = async (req, res) => {
 
        export const logout = (req, res) => {
         const cookies = req.cookies;
-        if (!cookies.jwa) return res.status(204)
+        if (!cookies.Residencespotterjwa) return res.status(204)
         res.clearCookie(process.env.REACT_APP_AGENT_COOKIE_KEY, { httpOnly: true, sameSite: 'None', secure: true });
        res.json({message: 'cookie cleared'});
     }
@@ -161,6 +161,12 @@ export const signup = async (req, res) => {
     if(password !== confirmPassword) return res.status(400).json({ message: "Password does not match"})
 
     const hashedPassword = await bcrypt.hash(password, 12);
+
+
+    if (profilePicture === '') return res.status(403).json({message: 'Profile picture is required'})
+    if (state === '') return res.status(403).json({message: 'State is required'})
+    if ( location === '') return res.status(403).json({message: 'Area is required'})
+    if (phone === '') return res.status(403).json({message: 'Phone is required'})
 
     const result = await Agent.create({ role, address: req.companyAddress, companyId: req.companyId, companyName: req.companyName, logo: req.companyLogo, email, state, location, profilePicture, company: req.companyId, password: hashedPassword, name: `${firstName} ${lastName}`, phone, createdAt: new Date().toLocaleString() })
 

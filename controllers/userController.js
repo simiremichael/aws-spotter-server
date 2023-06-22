@@ -1,4 +1,4 @@
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../models/userModel.js';
 import dotenv from 'dotenv';
@@ -31,10 +31,10 @@ export const signin = async (req, res) => {
 const {email, password} = req.body;
 try{
     const existingUser = await User.findOne({email: email.toLowerCase()});
-    if(!existingUser) return res.status(404).json({ message: "User doesn't exist"})
+    if(!existingUser) return res.status(404).json({ message: "User doesn't exist"});
    
-    const isPasswordCorrect = bcrypt.compare(password, existingUser.password);
-    if(!isPasswordCorrect ) return res.status(404).json({ message: "Invalid credentials."});
+    const isPasswordCorrect = await bcrypt.compare(password, existingUser.password);
+    if(!isPasswordCorrect ) return res.status(404).json({ message: "Invalid password."});
     
     const token = jwt.sign({email: existingUser.email, id: existingUser._id}, process.env.REACT_APP_TOKEN_KEY, { expiresIn: '3m' });
     const refreshToken = jwt.sign({email: existingUser.email, id: existingUser._id}, process.env.REACT_APP_TOKEN_KEY, { expiresIn: '7d' });
@@ -52,8 +52,8 @@ console.log(error);
 export const refresh = async (req, res) => {
   //res.set({"Access-Control-Allow-Origin": "https://my-property-finder.vercel.app"});
     const cookies = req.cookies;
-    if (!cookies?.jws) return res.status(401).json({message: 'Unauthorized'});
-    const refreshToken = cookies.jws;                                
+    if (!cookies?.Residencespotterjws) return res.status(401).json({message: 'Unauthorized'});
+    const refreshToken = cookies.Residencespotterjws;                                
     // evaluate jwt 
     jwt.verify(
         refreshToken,
@@ -70,8 +70,8 @@ export const refresh = async (req, res) => {
 
     export const logout = (req, res) => {
         const cookies = req.cookies;
-        if (!cookies.jws) return res.status(204);
-        res.clearCookie(process.env.REACT_APP_USER_COOKIE_KEY, { httpOnly: true, sameSite: 'None', secure: true });
+        if (!cookies.Residencespotterjws) return res.status(204);
+        res.clearCookie(process.env.REACT_APP_USER_COOKIE_KEY, { httpOnly: true, sameSite: 'None', secure: true});
        res.json({message: 'cookie cleared'});
     };
 

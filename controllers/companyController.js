@@ -1,4 +1,4 @@
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Company from '../models/companyModel.js';
 import sendEmail from '../utils/sendEmail.js';
@@ -31,8 +31,8 @@ export const signin = async (req, res) => {
     //res.set({"Access-Control-Allow-Origin": "https://my-property-finder.vercel.app"});
 const {email, password} = req.body;
 try{
-    const existingCompany = await Company.findOne({email});
-    if(!existingCompany) return res.status(404).json({ message: "Company doesn't exist"})
+    const existingCompany = await Company.findOne({email: email.toLowerCase()});
+    if(!existingCompany) return res.status(404).json({ message: "Company doesn't exist"});
    
     const isPasswordCorrect = await bcrypt.compare(password, existingCompany.password);
     if(!isPasswordCorrect ) return res.status(404).json({ message: "Invalid password"});
@@ -68,8 +68,8 @@ export const refresh = async (req, res) => {
    // res.set({"Access-Control-Allow-Origin": "https://my-property-finder.vercel.app"});
    
     const cookies = req.cookies;
-    if (!cookies?.jwt) return res.sendStatus(401);
-    const refreshToken = cookies.jwt;
+    if (!cookies?.Residencespotterjwt) return res.sendStatus(401);
+    const refreshToken = cookies.Residencespotterjwt;
                               
     // evaluate jwt 
     jwt.verify(
@@ -88,7 +88,7 @@ export const refresh = async (req, res) => {
 
        export const logout = (req, res) => {
         const cookies = req.cookies;
-        if (!cookies.jwt) return res.status(204)
+        if (!cookies.Residencespotterjwt) return res.status(204)
         res.clearCookie(process.env.REACT_APP_COMPANY_COOKIE_KEY, { httpOnly: true, sameSite: 'None', secure: true});
        res.json({message: 'cookie cleared'});
     }
@@ -127,6 +127,7 @@ export const signup = async (req, res) => {
     //res.set({"Access-Control-Allow-Origin": "https://my-property-finder.vercel.app"});
     const {logo, address, companyName, email, password, confirmPassword, area, state, L_G_A, phone, role, } = req.body;
     try {
+        if (logo === '') return res.status(403).json({message: 'Logo is required'})
         if (companyName === '') return res.status(403).json({message: 'Company name is required'})
         if (phone === '') return res.status(403).json({message: 'Phone number is required'})
         const existingCompany = await Company.findOne({email});
@@ -158,7 +159,7 @@ export const updateCompany = async (req, res) => {
     const { logo, address, companyName, email, area, password, confirmPassword, state, L_G_A, agent,role } = req.body;
     console.log(id, req.body);
 
-    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(404).send(`No property with id: ${id}`);
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(404).send(`No company with id: ${id}`);
 
     if(password !== confirmPassword) return res.status(400).json({ message: "Password does not match"})
 

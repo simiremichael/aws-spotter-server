@@ -1,4 +1,4 @@
-                                                                                                                                                                                                           
+import mongoose from "mongoose";                                                                                                                                                                                                 
 import express from 'express';
 import Property from "../models/propertyModel.js";
 //import NodeGeocoder  from 'node-geocoder';
