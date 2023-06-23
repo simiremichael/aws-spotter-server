@@ -253,7 +253,7 @@ export const getPropertyBySearchByBuy = async (req, res) => {
     const searchResult = new RegExp(search, 'i');
 
      try {
-        const query = {};
+        const query = {} || {toggle:'rent'};
         if (minprice !== '' ) {
        query.price = { $gte: minprice };
        }
